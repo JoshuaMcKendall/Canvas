@@ -1,90 +1,148 @@
-<?php $version = 8.36; ?>
+<?php
+/**
+ * The header for our theme
+ *
+ * This is the template that displays all of the <head> section and everything up until <div id="content">
+ *
+ * @link https://developer.wordpress.org/themes/basics/template-files/#template-partials
+ *
+ * @package Joshua McKendall
+ * @subpackage Canvas
+ * @since 3.0.0
+ * @version 3.0.0
+ */
+
+?>
+
 <!DOCTYPE html>
 
-<!--CANVAS v2.6 by Joshua Mckendall-->
+<html <?php language_attributes(); ?> class="no-js no-svg">
 
-<!--[if lt IE 7 ]> <html class="ie ie6 ie-lt10 ie-lt9 ie-lt8 ie-lt7 no-js" lang="en"> <![endif]-->
-<!--[if IE 7 ]>    <html class="ie ie7 ie-lt10 ie-lt9 ie-lt8 no-js" lang="en"> <![endif]-->
-<!--[if IE 8 ]>    <html class="ie ie8 ie-lt10 ie-lt9 no-js" lang="en"> <![endif]-->
-<!--[if IE 9 ]>    <html class="ie ie9 ie-lt10 no-js" lang="en"> <![endif]-->
-<!--[if gt IE 9]><!--><html class="no-js" lang="en"><!--<![endif]-->
+	<head id="<?php bloginfo('url'); ?>" data-template-set="canvas">
 
-<head id="<?php bloginfo('url'); ?>" data-template-set="canvas">
+		<meta charset="<?php bloginfo( 'charset' ); ?>">
 
-	<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="title" content="<?php bloginfo('name'); ?>" />
 
-	<title><?php wp_title('|',true,'right'); ?></title>
+		<meta name="description" content="<?php esc_html( bloginfo('description') ); ?>" />
 
-	<meta name="title" content="<?php bloginfo('name'); ?>" />
+		<meta name="copyright" content="<?php echo date('Y'); ?> <?php bloginfo('name'); ?> ">
 
-	<meta name="description" content="<?php bloginfo('description'); ?>" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-	<meta name="author" content="<?php bloginfo('name'); ?>" />
+		<?php echo wp_site_icon(); ?>
 
-	<meta name="google-site-verification" content="s_sehS6luXZFRkVNyjMgLJYWnU3FDCyMrdeiGo3xpGg" />
+		<link rel="pingback" href="<?php bloginfo('pingback_url'); ?>">
 
-	<meta name="Copyright" content="Copyright &copy; <?php bloginfo('name'); ?> <?php echo date('Y'); ?>. All Rights Reserved.">
+		<link rel="profile" href="http://gmpg.org/xfn/11">
 
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-	
-	<meta name="theme-color" content="#fff">
+		<?php wp_head(); ?>
 
-	<meta name="msapplication-TileColor" content="#fff"/>
+	</head>
 
-	<meta name="msapplication-TileImage" content="<?php echo get_stylesheet_directory_uri(); ?>/_assets/img/mstile-144x144.png">
+	<body <?php body_class(); ?>>
 
-	<meta name="application-name" content="<?php bloginfo('name'); ?>">
+		<?php do_action('canvas_before_header'); ?>
 
-	<meta name="apple-mobile-web-app-title" content="<?php bloginfo('name'); ?>">
-	
-	<link rel="home" href="http://joshuamckendall.com">
-	
-	<link rel="manifest" href="<?php echo get_stylesheet_directory_uri(); ?>/manifest.json?v=<?php echo $version; ?>">
+		<header class="site-header row">
 
-	<?php echo wp_site_icon(); ?>
+			<?php
+
+			do_action('canvas_header');
+
+			do_action('canvas_header_before_navigation'); ?>
+
+			<nav id="top-nav-menu" class="site-navigation column col-lg-12 col-md-12 col-sm-12 col-xs-12" role="navigation">
+
+				<?php 
+
+					do_action('canvas_header_before_branding');
+
+					get_template_part( '_template-parts/header/site', 'branding' );
+
+					do_action('canvas_header_after_branding');
+
+					do_action('canvas_header_navigation');
+
+					do_action('canvas_header_before_navigation_bar');
+
+				?>
+
+				<div class="navigation-bar-container">
+
+					<ul id="navigation-bar">
+
+						<?php
+
+						if( function_exists( 'bp_is_active' ) || canvas_is_woocommerce_activated() ) {
+
+							get_template_part( '_template-parts/navigation/menu-item', 'search' );
+
+						}
+
+						do_action( 'canvas_before_nav_menu' );
+
+						wp_nav_menu( array(
+
+							'theme_location' 		=> 'top', 
+							'menu_id' 				=> 'top-menu', 
+							'container'				=> 'li',
+							'container_id'			=> 'main-menu',
+							'container_class'		=> 'top-menu-list-item menu-item priority-nav',
+							'items_wrap'			=> canvas_top_menu_wrap()
+
+						) );
 
 
+						do_action('canvas_after_nav_menu');
 
-	<?php
-	//Conditionally add Javascript
-		if (is_front_page()) {
-			add_action( 'wp_enqueue_scripts', 'canvas_flexslider' );
-		}
-		if (is_page_template('contact.php')) {
-			add_action( 'wp_enqueue_scripts', 'canvas_contact' );
-		}
-		if (is_page_template('gallery.php') || is_search() || is_archive() || is_single() || is_home()) {
-			add_action( 'wp_enqueue_scripts', 'canvas_unveil' );
-			// add_action( 'wp_enqueue_scripts', 'canvas_gallery' );
-		}
+						if( canvas_is_woocommerce_activated() ) {
 
-		//add_action( 'wp_enqueue_scripts', 'canvas_modernizr' );
-	?>
+							echo canvas_header_cart();
 
-	<link rel="pingback" href="<?php bloginfo('pingback_url'); ?>">
+						}
 
+						if( function_exists( 'bp_is_active' ) || canvas_is_woocommerce_activated() ) {
 
-	<?php wp_head(); ?>
-</head>
+							get_template_part( '_template-parts/navigation/menu-item', 'user' );
 
-<body class="logo-image">
+						} else {
 
-<div id="canvas">
-	<div id="wrapper">
-		<header id="header">
-			<div id="logo">
-			<h1 class="logo">
-			<?php echo canvas_custom_logo(); ?>
-			</h1>
-			<small>
-				<?php bloginfo('description'); ?>
-			</small>
-		</div>
-			<div id="top-nav">
-			<nav id="nav" class="main-nav">
-						<?php wp_nav_menu( array('menu' => 'Menu 1') ); ?>
+							get_template_part( '_template-parts/navigation/menu-item', 'search' );
+
+						}
+
+						?>
+
+					</ul><!-- #navigation-bar -->			
+
+				</div><!-- .navigation-bar-container -->
+
+				<?php
+
+					do_action('canvas_header_after_navigation_bar');
+
+				?>
+
 			</nav>
-		</div>
+
+			<?php 
+
+			do_action('canvas_header_after_navigation'); ?>
+
 		</header>
+
+		<?php do_action('canvas_after_header'); ?>
+
+		<main id="main" class="site-main row" role="main">
+
+			<?php 
+			/**
+			 * Functions hooked in to canvas_before_main_content
+			 *
+			 * @hooked BP_Legacy() -> sitewide_notices()	- 10
+			 * @src  ./_include/buddypress/buddypress-functions.php
+			 */
+			do_action('canvas_before_main_content');

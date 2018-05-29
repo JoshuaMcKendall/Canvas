@@ -1,5 +1,0 @@
-<?php
-
-//Content snooping shield!
-
-?>

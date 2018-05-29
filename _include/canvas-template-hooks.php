@@ -1,0 +1,3 @@
+<?php
+
+//Canvas template hooks

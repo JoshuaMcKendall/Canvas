@@ -1,54 +1,43 @@
-<footer class="clearfix foot">
-	<ul class="clearfix" >
-		<li class="bottomLinks"><a title="Policies" href="<?php echo get_site_url(); ?>/policies/"><small>Policies</small></a></li>
-		<li class="bottomLinks"><a title="Copyright" href="<?php echo get_site_url(); ?>/copyright/"><small>&copy; Copyright <?php echo date('Y'); ?></small></a></li>
-		<li class="bottomLinks"><a title="Rss Feed" href="<?php bloginfo('rss_url'); ?>" ><small>Rss</small></a></li>
-	</ul>
-</footer>
-</div><!--wrapper-->
-</div><!--canvas-->
-<link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400' rel='stylesheet' type='text/css'>
-<link href='http://fonts.googleapis.com/css?family=Varela+Round' rel='stylesheet' type='text/css'>
-<?php wp_footer(); ?>
-<?php $offset = (is_page('gallery')) ? 0 : 120; ?>
-<?php
-if (is_page_template('gallery.php') || is_search() || is_archive() || is_single() || is_home()) {
-	echo '<script type="text/javascript" charset="utf-8">
-	$(document).ready(function() {
-		$(".unveil").unveil('.$offset.', function() {
-		  $(this).load(function() {
-			this.style.opacity = 1;
-		  });
-		});
-	});
-	</script>';
-}
-?>
-<?php
-	if (is_front_page()) {
-		echo "
-		<script type=\"text/javascript\" charset=\"utf-8\">
-  			jQuery(window).load(function() {
-    			jQuery('.flexslider').flexslider({
-    				animation: \"fade\",
-    				controlNav: false,
-					directionNav: false,
-    			});
-  			});
-		</script>";
-	}
-	if(is_page('gallery')) {
-		echo " ";
-	}
-	if(is_page('blog') || is_home() || is_single() || is_archive()) {
-		echo "
-			<script type=\"text/javascript\" charset=\"utf-8\">
-			$('#page').css('min-height', function(){
-			return $('#sidebar').height() + 60; });
+<?php 
+		/**
+		 * Functions hooked in to canvas_after_main_content
+		 */
+		do_action('canvas_after_main_content'); ?>
 
+		</main><!-- #main -->
 
-			</script>";
-	}
-?>
-</body>
+		<footer class="site-footer row">
+
+			<nav id="footer-breadcrumb-nav" role="navigation" aria-label="Breadcrumbs">
+
+				<div class="column col-right-unpadded col-xs-10 col-sm-10 col-md-11 col-lg-11">
+
+					<?php do_action('canvas_footer_breadcrumb_area'); ?>
+
+				</div>
+
+				<div class="back-to-top column col-left-unpadded col-xs-2 col-sm-2 col-md-1 col-lg-1">
+
+					<div id="back-to-top">
+
+						<?php do_action('canvas_footer_back_to_top_area'); ?>
+
+					</div>
+
+				</div>
+
+			</nav>
+
+			<?php do_action('canvas_footer'); ?>
+
+			<?php  get_template_part('_template-parts/footer/footer', 'widgets'); ?>
+
+			<small class="copyright column col-xs-12">&copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?></small>
+			
+		</footer>
+
+		<?php wp_footer(); ?>
+
+	</body>
+
 </html>

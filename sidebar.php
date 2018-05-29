@@ -1,29 +1,23 @@
 <?php
 /**
- * @package WordPress
- * @subpackage HTML5-Reset-WordPress-Theme
- * @since HTML5 Reset 2.0
+ * The sidebar containing the main widget area
+ *
+ * @link https://developer.wordpress.org/themes/basics/template-files/#template-partials
+ *
+ * @package Joshua McKendall
+ * @subpackage Canvas
+ * @since 3.0.0
+ * @version 3.0.0
  */
+
+if ( ! is_active_sidebar( 'sidebar-1' ) ) {
+	return;
+}
+
 ?>
- <div id="sidebarbox">
 
-    <?php if (!function_exists('dynamic_sidebar') && !dynamic_sidebar('Sidebar Widgets')) : else : ?>
-    
-        <!-- All this stuff in here only shows up if you DON'T have any widgets active in this zone -->
+<aside id="top-blog-sidebar" class="widget-area column col-xs-12 col-sm-12 col-md-12 col-lg-pull-4" role="complementary" aria-label="<?php esc_attr_e( 'Top Blog Sidebar', 'canvas' ); ?>">
 
-    	<?php get_search_form(); ?>
-    	<div id="archives">
-    		<h2 class="sidehead">Monthly Archive</h2>
-    			<?php get_calendar(); ?>
-    	</div><!--archives-->
-    	
-    	<div id="categories">
-    	<h2 class="sidehead">Categories</h2>
-		<ul class="sidelinks">
-			 <?php wp_list_categories('title_li='); ?>
-		</ul>
-    	</div><!--categories-->
-    
-	<?php endif; ?>
-
-</div>
+	<?php dynamic_sidebar( 'sidebar-1' ); ?>	
+	
+</aside><!-- #blog-sidebar -->
