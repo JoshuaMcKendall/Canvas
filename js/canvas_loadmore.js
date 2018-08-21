@@ -8,7 +8,14 @@ jQuery(function($){
 		},
 		canBeLoaded = true,
 		bottomOffset = 2000,
-		settings = $('#loadmore-settings');
+		$settings = $('#loadmore-settings'),
+		$loadMore = $('#canvas-loadmore');
+
+	if( $loadMore.hasClass('hidden') ) {
+
+		$loadMore.removeClass('hidden');
+
+	}
 
 
 	$(window).scroll( function() {
@@ -28,7 +35,7 @@ jQuery(function($){
 				'page' : canvas_loadmore_params.current_page
 			};
 
-		settings.prop('disabled', true);
+		$settings.prop('disabled', true);
 
  
 		$.ajax({
@@ -51,18 +58,18 @@ jQuery(function($){
 					if ( canvas_loadmore_params.current_page == canvas_loadmore_params.max_page ) { 
 						
 						button.remove(); // if last page, remove the button
-						settings.remove();
+						$settings.remove();
 
 						$( document.body ).trigger( 'post-load' );
 
 					}
 
-					settings.prop('disabled', false);
+					$settings.prop('disabled', false);
 
 				} else {
 					console.log( 'No data: ', data );
 					button.remove(); // if no data, remove the button as well
-					settings.remove();
+					$settings.remove();
 				}
 			}
 		});

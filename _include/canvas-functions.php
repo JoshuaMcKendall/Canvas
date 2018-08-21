@@ -29,6 +29,48 @@ if ( ! function_exists( 'canvas_is_woocommerce_activated' ) ) {
 }
 
 
+if ( ! function_exists( 'canvas_is_buddypress_activated' ) ) {
+
+	/**
+	 * Query WooCommerce activation
+	 */
+	function canvas_is_buddypress_activated() {
+
+		if ( function_exists('bp_is_active') ) { return true; } else { return false; }
+
+	}
+}
+
+if ( ! function_exists( 'canvas_get_user_id' ) ) {
+
+	/**
+	 * Query WooCommerce activation
+	 */
+	function canvas_get_user_id() {
+
+		if( is_user_logged_in() ) {
+
+			$user_id;
+
+			if( canvas_is_buddypress_activated() ) {
+
+				$user_id = bp_loggedin_user_id();
+
+			} else {
+
+				$user_id = get_current_user_id();
+
+			}
+
+			return $user_id;
+
+		}
+
+		return false;
+
+	}
+}
+
 /**
  * Call a shortcode function by tag name.
  *
@@ -171,7 +213,7 @@ if( ! function_exists( 'canvas_get_avatar' ) ) {
 
 		$args = wp_parse_args( $args, $defaults );
 
-		if ( function_exists( 'bp_is_active' ) && is_user_logged_in() ) {
+		if ( canvas_is_buddypress_activated() && is_user_logged_in() && get_option( 'show_avatars' ) ) {
 
 			$type 		= $args['type'];
 			$height 	= $args['height'];
@@ -179,15 +221,25 @@ if( ! function_exists( 'canvas_get_avatar' ) ) {
 
 			$user_avatar = bp_get_loggedin_user_avatar( 'type='.$type.'&width='.$width.'&height='.$height );
 
-		} elseif ( is_user_logged_in() ) {
+		} elseif ( is_user_logged_in() && get_option( 'show_avatars' ) ) {
 
 			$user_id = get_current_user_id();
-		
+
 			$user_avatar = get_avatar( $user_id, $args['height'] );
 
 		} else {
 			
-			$user_avatar = canvas_get_svg_icon( array( 'icon' => $args['icon'], 'size' => $args['icon_size'] ) );
+			if( is_user_logged_in() ) {
+
+				$args['icon'] = apply_filters( 'canvas_logged_in_user_icon', 'user-check' );
+
+				$user_avatar = canvas_get_svg_icon( array( 'icon' => $args['icon'], 'size' => $args['icon_size'] ) );
+
+			} else {
+
+				$user_avatar = canvas_get_svg_icon( array( 'icon' => $args['icon'], 'size' => $args['icon_size'] ) );
+
+			}
 
 		}
 
@@ -216,7 +268,9 @@ if( ! function_exists( 'canvas_get_user_menu_item' ) ) {
 
 		} elseif( is_user_logged_in() ) { 
 
+
 			$user = '<span id="user-avatar-nav" class="user avatar icon">'.$user_avatar.'</span>';
+
 
 		} else {
 
@@ -231,118 +285,475 @@ if( ! function_exists( 'canvas_get_user_menu_item' ) ) {
 }
 
 
-if( ! function_exists( 'canvas_get_user_link_items' ) ) {
+if( ! function_exists( 'canvas_more_link' ) ) {
 
-	function canvas_get_user_link_items( $args = array() ) {
 
-		$defaults = apply_filters( 'canvas_default_user_link_items', array( 
+	function canvas_more_link( $args = array() ) {
 
-			'user_id'				=> false,
-			'notification_count'	=> 0,
-			'message_count'			=> 0
+		$defaults = apply_filters( 'canvas_more_link_defaults', array(
+
+			'text'				=>	__( 'Read More', 'canvas' ),
+			'icon'				=>	'chevron-right',
+			'icon_size'			=>	'sm',
+			'post_format'		=>	null
 
 		) );
 
 		$args = wp_parse_args( $args, $defaults );
 
+
+		$more_link = '<span class="more-text">'. $args['text'];
+
+		$more_link .= '<span class="icon icon-right">'. canvas_get_svg_icon( array( 
+
+			'icon'		=> $args['icon'],
+			'size'		=> $args['icon_size']
+
+		 ) ) .'</span></span>';
+
+
+		return apply_filters( 'canvas_more_link', $more_link, $args );
+
+	}
+
+
+}
+
+
+// ARE LINKS ENABLED FUNCTIONs
+
+if( ! function_exists( 'canvas_is_profile_link_enabled' ) ) {
+
+	function canvas_is_profile_link_enabled() {
+
 		if( is_user_logged_in() ) {
 
-			if( function_exists( 'bp_is_active' ) ) {
+			if( canvas_is_buddypress_activated() ) {
 
-				$bp_messages_link = '';
+				if( bp_is_active( 'xprofile' ) ) {
 
-				$unread_messages_count = '';
-
-				$user_id = ( $args['user_id'] ) ? $args['user_id'] : bp_loggedin_user_id();
-
-				$unread_notifications_count = ( $args['notification_count'] ) ? $args['notification_count'] : bp_notifications_get_unread_notification_count( $user_id );
-
-				if( bp_is_active( 'messages' ) ) {
-
-					$bp_messages_link = bp_loggedin_user_domain().bp_get_messages_slug();
-
-					$unread_messages_count = ( $args['message_count'] ) ? $args['message_count'] : bp_get_total_unread_messages_count( $user_id );
+					return true;
 
 				}
 
-				$user_links = apply_filters( 'canvas_user_links', array( 
-
-					'wp-admin'			=> array(
-												'icon'		=> 'sliders',
-												'text'		=> __('Admin', 'canvas'),
-												'link'		=> get_admin_url(),
-												'enabled'	=> current_user_can( 'edit_posts' )
-											),
-
-
-					'profile'			=> array(
-												'icon'		=> 'user',
-												'text'		=> __('Profile', 'canvas'),
-												'link'		=> bp_get_loggedin_user_link(),
-												'enabled'	=> bp_is_active( 'xprofile' )
-											),
-					'notifications'		=> array(
-												'icon'		=> 'bell',
-												'text'		=> __('Notifications', 'canvas'),
-												'link'		=> bp_get_notifications_permalink( $user_id ),
-												'enabled'	=> bp_is_active( 'notifications' ),
-												'count'		=> $unread_notifications_count
-											),
-					'messages'			=> array(
-												'icon'		=> 'mail',
-												'text'		=> __('Messages', 'canvas'),
-												'link'		=> $bp_messages_link,
-												'enabled'	=> bp_is_active( 'messages' ),
-												'count'		=> $unread_messages_count
-											),
-					'account'			=> array(
-												'icon'		=> 'settings',
-												'text'		=> __('Account', 'canvas'),
-												'link'		=> bp_loggedin_user_domain().bp_get_settings_slug(),
-												'enabled'	=> bp_is_active('settings')
-											),
-					'logout'			=> array(
-												'icon'		=> 'log-out',
-												'text'		=> __('Log out', 'canvas'),
-												'link'		=> wp_logout_url( get_permalink( ) ),
-												'enabled'	=> true
-											)
-
-				) );
-
-
-			} elseif ( canvas_is_woocommerce_activated() ) {
-
-				$user_id = ( $args['user_id'] ) ? $args['user_id'] : get_current_user_id();
-
-				$user_links = apply_filters( 'canvas_user_links', array( 
-
-					'wp-admin'			=> array(
-												'icon'		=> 'sliders',
-												'text'		=> __('Admin', 'canvas'),
-												'link'		=> get_admin_url(),
-												'enabled'	=> current_user_can( 'edit_posts' )
-											),
-					'account'			=> array(
-												'icon'		=> 'settings',
-												'text'		=> __('Account', 'canvas'),
-												'link'		=> get_permalink( get_option('woocommerce_myaccount_page_id') ),
-												'enabled'	=> get_option('woocommerce_myaccount_page_id')
-											),
-					'logout'			=> array(
-												'icon'		=> 'log-out',
-												'text'		=> __('Log out', 'canvas'),
-												'link'		=> wp_logout_url( get_permalink() ),
-												'enabled'	=> true
-											)
-
-				) );
+				return false;
 
 			}
 
 		}
 
-			return $user_links;
+		return false;
+
+	}
+
+}
+
+
+if( ! function_exists( 'canvas_is_notifications_link_enabled' ) ) {
+
+	function canvas_is_notifications_link_enabled() {
+
+		if( is_user_logged_in() ) {
+
+			if( canvas_is_buddypress_activated() ) {
+
+				if( bp_is_active( 'notifications' ) ) {
+
+					return true;
+
+				}
+
+				return false;
+
+			}
+
+		}
+
+		return false;
+
+	}
+
+}
+
+if( ! function_exists( 'canvas_is_messages_link_enabled' ) ) {
+
+	function canvas_is_messages_link_enabled() {
+
+		if( is_user_logged_in() ) {
+
+			if( canvas_is_buddypress_activated() ) {
+
+				if( bp_is_active( 'messages' ) ) {
+
+					return true;
+
+				}
+
+				return false;
+
+			}
+
+		}
+
+		return false;
+
+	}
+
+}
+
+
+if( ! function_exists( 'canvas_is_account_link_enabled' ) ) {
+
+	function canvas_is_account_link_enabled() {
+
+		if( is_user_logged_in() ) {
+
+			if( canvas_is_buddypress_activated() || canvas_is_woocommerce_activated() ) {
+
+				if( bp_is_active('settings') || get_option( 'woocommerce_myaccount_page_id' ) ) {
+
+					return true;
+
+				}
+
+				return false;
+
+			}
+
+		}
+
+		return false;
+
+	}
+
+}
+
+if( ! function_exists( 'canvas_is_logout_link_enabled' ) ) {
+
+	function canvas_is_logout_link_enabled() {
+
+		if( is_user_logged_in() ) {
+
+			return true;
+
+		}
+
+		return false;
+
+	}
+
+}
+
+if( ! function_exists( 'canvas_is_login_link_enabled' ) ) {
+
+	function canvas_is_login_link_enabled() {
+
+		if( ! is_user_logged_in() ) {
+
+			return true;
+
+		}
+
+		return false;
+
+	}
+
+}
+
+
+if( ! function_exists( 'canvas_is_registration_link_enabled' ) ) {
+
+	function canvas_is_registration_link_enabled() {
+
+		if( ! is_user_logged_in() && get_option( 'users_can_register' ) ) {
+
+			return true;
+
+		}
+
+		return false;
+
+	}
+
+}
+
+
+// Canvas user menu link functions
+
+if( ! function_exists( 'canvas_profile_link' ) ) {
+
+	function canvas_profile_link() {
+
+		if( is_user_logged_in() ) {
+
+			$profile_link = '#profile';
+
+			if( canvas_is_buddypress_activated() && bp_is_active( 'xprofile' ) ) {
+
+				$profile_link = bp_get_loggedin_user_link();
+
+			}
+
+			return apply_filters( 'canvas_profile_link', $profile_link );
+
+		}
+
+		return wp_login_url( get_permalink() );
+
+	}
+
+}
+
+if( ! function_exists( 'canvas_notifications_link' ) ) {
+
+	function canvas_notifications_link() {
+
+		if( is_user_logged_in() ) {
+
+			$notifications_link = '#notifications';
+
+			$user_id = canvas_get_user_id();
+
+			if( canvas_is_buddypress_activated() && bp_is_active( 'notifications' ) ) {
+
+				$notifications_link = bp_get_notifications_permalink( $user_id );
+
+			}
+
+			return apply_filters( 'canvas_notifications_link', $notifications_link );
+
+		}
+
+		return wp_login_url( get_permalink() );
+
+	}
+
+}
+
+if( ! function_exists( 'canvas_messages_link' ) ) {
+
+	function canvas_messages_link() {
+
+		if( is_user_logged_in() ) {
+
+			$messages_link = '#messages';
+
+			if( canvas_is_buddypress_activated() && bp_is_active( 'messages' ) ) {
+
+				$messages_link = bp_loggedin_user_domain().bp_get_messages_slug();
+
+			}
+
+			return apply_filters( 'canvas_messages_link', $messages_link );
+
+		}
+
+		return wp_login_url( get_permalink() );
+
+	}
+
+}
+
+if( ! function_exists( 'canvas_account_link' ) ) {
+
+	function canvas_account_link() {
+
+		if( is_user_logged_in() ) {
+
+			$account_link = '#account';
+
+			if( canvas_is_buddypress_activated() && bp_is_active( 'settings' ) ) {
+
+				$account_link = bp_loggedin_user_domain().bp_get_settings_slug();
+
+			} elseif( canvas_is_woocommerce_activated() && get_option('woocommerce_myaccount_page_id') ) {
+
+				$account_link = get_permalink( get_option('woocommerce_myaccount_page_id') );
+
+			}
+
+			return apply_filters( 'canvas_account_link', $account_link );
+
+		}
+
+		return wp_login_url( get_permalink() );
+
+	}
+
+}
+
+
+if( ! function_exists( 'canvas_unread_notifications_count' ) ) {
+
+	function canvas_unread_notifications_count() {
+
+		$unread_notifications_count = 0;
+
+		if( is_user_logged_in() ) {
+
+			$user_id = canvas_get_user_id();
+
+			if( canvas_is_buddypress_activated() && bp_is_active( 'notifications' ) ) {
+
+				$unread_notifications_count = bp_notifications_get_unread_notification_count( $user_id );
+
+			}
+
+		}
+
+		return apply_filters( 'canvas_unread_notifications_count', $unread_notifications_count );
+
+	}
+
+}
+
+
+if( ! function_exists( 'canvas_unread_messages_count' ) ) {
+
+	function canvas_unread_messages_count() {
+
+		$unread_message_count = 0;
+
+		if( is_user_logged_in() ) {
+
+			$user_id = canvas_get_user_id();
+
+			if( canvas_is_buddypress_activated() && bp_is_active( 'messages' ) ) {
+
+				$unread_message_count = bp_get_total_unread_messages_count( $user_id );
+
+			}
+
+		}
+
+		return apply_filters( 'canvas_unread_messages_count', $unread_message_count );
+
+	}
+
+}
+
+
+if( !function_exists( 'canvas_sort_user_links' ) ) {
+
+
+	function canvas_sort_user_links( $items ) {
+
+		$sorted = array();
+
+		foreach ( $items as $key => $item ) {
+
+			if( ! $item['enabled'] ) {
+
+				continue;
+
+			}
+			
+			$position = 99;
+
+			if( isset( $item['position'] ) ) {
+
+				$position = (int) $item['position'];
+
+			}
+
+			if( isset( $sorted[ $position ] ) ) {
+
+				$sorted_keys = array_keys( $sorted );
+
+				do {
+
+					$position += 1;
+
+				} while( in_array( $position, $sorted_keys ) );
+
+			}
+
+			$item['key'] = $key;
+
+			$sorted[ $position ] = $item;
+
+		}
+
+		ksort( $sorted );
+
+		return $sorted;
+
+	}
+
+
+}
+
+
+if( ! function_exists( 'canvas_get_user_link_items' ) ) {
+
+	function canvas_get_user_link_items() {
+
+		return apply_filters( 'canvas_user_links', array( 
+
+			'wp-admin'			=> array(
+										'icon'		=> array( 'name' => 'sliders', 'size' => 'sm' ),
+										'text'		=> __('Admin', 'canvas'),
+										'link'		=> get_admin_url(),
+										'enabled'	=> ( current_user_can( 'edit_posts' ) && ! is_admin_bar_showing() ),
+										'position'	=> 5
+									),
+
+			'profile'			=> array(
+										'icon'		=> array( 'name' => 'user', 'size' => 'sm' ),
+										'text'		=> __('Profile', 'canvas'),
+										'link'		=> canvas_profile_link(),
+										'enabled'	=> canvas_is_profile_link_enabled(),
+										'position'	=> 10
+									),
+			'notifications'		=> array(
+										'icon'		=> array( 'name' => 'bell', 'size' => 'sm' ),
+										'text'		=> __('Notifications', 'canvas'),
+										'link'		=> canvas_notifications_link(),
+										'enabled'	=> canvas_is_notifications_link_enabled(),
+										'position'	=> 20,
+										'count'		=> canvas_unread_notifications_count()
+									),
+			'messages'			=> array(
+										'icon'		=> array( 'name' => 'mail', 'size' => 'sm' ),
+										'text'		=> __('Messages', 'canvas'),
+										'link'		=> canvas_messages_link(),
+										'enabled'	=> canvas_is_messages_link_enabled(),
+										'position'	=> 30,
+										'count'		=> canvas_unread_messages_count()
+									),
+			'account'			=> array(
+										'icon'		=> array( 'name' => 'settings', 'size' => 'sm' ),
+										'text'		=> __('Account', 'canvas'),
+										'link'		=> canvas_account_link(),
+										'enabled'	=> canvas_is_account_link_enabled(),
+										'position'	=> 40
+									),
+			'logout'			=> array(
+										'icon'		=> array( 'name' => 'log-out', 'size' => 'sm', 'direction' => 'right' ),
+										'text'		=> __('Log out', 'canvas'),
+										'link'		=> wp_logout_url( get_permalink( ) ),
+										'enabled'	=> canvas_is_logout_link_enabled(),
+										'position'  => 50
+									),
+			'login'				=> array(
+										'icon'		=> array( 'name' => 'log-in', 'size' => 'sm' ),
+										'text'		=> __( 'Log in', 'canvas' ),
+										'link'		=> wp_login_url( get_permalink() ),
+										'enabled'	=> canvas_is_login_link_enabled(),
+										'position'	=> 10
+
+									),
+			'register'			=> array(
+										'icon'		=> array( 'name' => 'user-plus', 'size' => 'sm' ),
+										'text'		=> __( 'Register', 'canvas' ),
+										'link'		=> wp_registration_url( get_permalink() ),
+										'enabled'	=> canvas_is_registration_link_enabled(),
+										'position'	=> 20
+
+									)
+
+		) );
+
 	}
 
 }
@@ -361,110 +772,325 @@ if( ! function_exists( 'canvas_get_user_links' ) ) {
 
 		$container = '';
 
-		if( is_user_logged_in() ) {
+		$user_links = canvas_sort_user_links( canvas_get_user_link_items() );
 
-			if( function_exists( 'bp_is_active' ) ) {
+		foreach( $user_links as $key => $user_link ) {
 
-				$user_id = bp_loggedin_user_id();
+			$key = $user_link['key'];
 
-				$user_links = canvas_get_user_link_items();
+			$user_link = apply_filters( 'canvas_'. $key .'_link_item', $user_link );
 
-				foreach( $user_links as $key => $user_link ) {
+			$icon = canvas_get_svg_icon( array(
 
-					$user_link = apply_filters( 'canvas_'. $key .'_link_item', $user_link );
-
-					if( $user_link['enabled'] ) {
-
-						$icon = canvas_get_svg_icon( array(
-
-							'icon'	=> $user_link['icon'],
-							'size'	=> 'sm'
-
-						) );
-
-						$unread_badge = '';
-
-						if( ( $key == 'notifications' && $user_link['count'] > 0 ) || ( $key == 'messages' && $user_link['count'] > 0 ) ) {
-
-							$count = ( $user_link['count'] ) ? $user_link['count'] : 0;
-
-							$unread_count = ( $count > 99 ) ? '99+' : $count;
-
-							$unread_badge = '<div class="badge badge-md badge-danger badge-inline">'.$unread_count.'</div>';
-
-						}
-
-						$user_meta_item = '<a href="'.esc_url( $user_link['link'] ).'" class="link link-secondary"><span class="icon icon-left icon-sm">'.$icon.'</span>'.$user_link['text'].' '. $unread_badge .'</a>';
-
-						$container .= '<span class="'.esc_attr($key).' user-dropdown-item">'.$user_meta_item.'</span>';
-
-					}
-
-				}
-
-			} elseif( canvas_is_woocommerce_activated() ) {
-
-				$user_id = get_current_user_id();
-
-				$user_links = canvas_get_user_link_items();
-
-				foreach( $user_links as $key => $user_link ) {
-
-					if( $user_link['enabled'] ) {
-
-						$icon = canvas_get_svg_icon( array(
-
-							'icon'	=> $user_link['icon'],
-							'size'	=> 'sm'
-
-						) );
-
-						$user_meta_item = '<a href="'.esc_url( $user_link['link'] ).'" class="link link-secondary"><span class="icon icon-left">'.$icon.'</span>'.$user_link['text'] .'</a>';
-
-						$container .= '<span class="'.esc_attr( $key ).' user-dropdown-item">'.$user_meta_item.'</span>';
-
-					}
-
-				}			
-
-			} 
-
-		} else {
-
-			$log_in_icn = canvas_get_svg_icon( array(
-
-				'icon'		=> 'log-in',
-				'size'		=> 'sm'
+				'icon'	=> $user_link['icon']['name'],
+				'size'	=> $user_link['icon']['size']
 
 			) );
 
+			$unread_badge = '';
 
-			$log_in_link = '<a href="'. esc_url( wp_login_url( get_permalink() ) ) .'" class="link link-secondary" ><span class="icon icon-left">'.$log_in_icn.'</span>'. __('Log In', 'canvas') .'</a>';
+			if( ( $key == 'notifications' && $user_link['count'] > 0 ) || ( $key == 'messages' && $user_link['count'] > 0 ) ) {
 
-			$container .= '<span class="user-dropdown-item">'.$log_in_link.'</span>';
+				$count = ( $user_link['count'] ) ? $user_link['count'] : 0;
 
+				$unread_count = ( $count > 99 ) ? '99+' : $count;
 
-			if( get_option( 'users_can_register' ) ) {
-
-
-				$user_plus_icn = canvas_get_svg_icon( array(
-
-					'icon'		=> 'user-plus',
-					'size'		=> 'sm'
-
-				) );
-
-				$register_link = '<a href="'. esc_url( wp_registration_url( get_permalink() ) ) .'" class="link link-secondary" ><span class="icon icon-left">'.$user_plus_icn.'</span>'. __('Register', 'canvas') .'</a>';
-
-				$container .= '<span class="user-dropdown-item">'.$register_link.'</span>';
+				$unread_badge = '<div class="badge badge-md badge-danger badge-inline">'.esc_html( $unread_count ).'</div>';
 
 			}
+
+			$direction = ( isset( $user_link['icon']['direction'] ) ) ? $user_link['icon']['direction'] : 'left';
+
+			switch ( $direction ) {
+
+				case 'left':
+					$rol = 'left';
+					break;
+
+				case 'right':
+					$rol = 'right';
+					break;
+				
+				default:
+					$rol = 'left';
+					break;
+
+			}
+
+			$icon = '<span class="icon icon-'.$rol.' icon-sm">'.$icon.'</span>';
+
+			$item_text = esc_html( $user_link['text'] );
+
+			$item_content = ( $rol == 'left' ) ? $icon . $item_text : $item_text .  $icon;
+
+			$user_meta_item = '<a href="'.esc_url( $user_link['link'] ).'" class="link link-secondary '. esc_attr( $key ) .'-link">'. $item_content .' '. $unread_badge .'</a>';
+
+			$container .= '<span class="'.esc_attr( $key ).' user-dropdown-item">'.$user_meta_item.'</span>';
+
 
 		}
 
 		return $container;
 
 	}
+
+}
+
+if( !function_exists( 'canvas_sort_comment_links' ) ) {
+
+
+	function canvas_sort_comment_links( $items ) {
+
+		$sorted = array();
+
+		foreach ( $items as $key => $item ) {
+			
+			$position = 99;
+
+			if( isset( $item['position'] ) ) {
+
+				$position = (int) $item['position'];
+
+			}
+
+			if( isset( $sorted[ $position ] ) ) {
+
+				$sorted_keys = array_keys( $sorted );
+
+				do {
+
+					$position += 1;
+
+				} while( in_array( $position, $sorted_keys ) );
+
+			}
+
+			$item['key'] = $key;
+
+			$sorted[ $position ] = $item;
+
+		}
+
+		ksort( $sorted );
+
+		return $sorted;
+
+	}
+
+
+}
+
+if( ! function_exists( 'canvas_comment_is_unapproved' ) ) {
+
+	function canvas_comment_is_unapproved( $comment ) {
+
+		if ( '0' == $comment->comment_approved ) {
+
+			return true;
+
+		}
+
+		return false;
+
+	}
+
+}
+
+
+if( ! function_exists( 'canvas_comment_belongs_to_current_user' ) ) {
+
+	function canvas_comment_belongs_to_current_user( $comment, $user_id ) {
+
+		if( $comment->user_id != $user_id ) {
+
+			return false;
+
+		}
+
+		return true;
+
+	}
+
+}
+
+
+if( ! function_exists( 'canvas_user_can_edit_comment' ) ) {
+
+	function canvas_user_can_edit_comment( $comment, $args = array() ) {
+
+		if( is_user_logged_in() ) {
+
+			$user_id = get_current_user_id();
+
+			if( current_user_can( 'moderate_comments' ) || canvas_comment_belongs_to_current_user( $comment, $user_id ) ) {
+
+				return true;
+
+			}
+
+			return false;
+
+		}
+
+		return false;
+
+	}
+
+}
+
+
+if( ! function_exists( 'canvas_comment_permalink' ) ) {
+
+	function canvas_comment_permalink( $comment, $args = array() ) {
+
+		// $comment_permalink = ( $csort ) ? add_query_arg( 'csort', $csort, get_comment_link( $comment->comment_ID, $comment_link_args ) ) : get_comment_link( $comment->comment_ID, $comment_link_args );
+
+		$comment_permalink = add_query_arg( 'cid', $comment->comment_ID, get_comment_link( $comment, $args ) );
+
+		return apply_filters( 'canvas_comment_permalink', $comment_permalink, $comment, $args );
+
+	}
+
+}
+
+
+if( ! function_exists( 'canvas_flag_comment_link' ) ) {
+
+	function canvas_flag_comment_link( $comment, $args = array() ) {
+
+		$comment_flag_link = wp_nonce_url( add_query_arg( array( 
+
+								'cid'		=> $comment->comment_ID,
+								'caction' 	=> 'flag',
+
+							), get_comment_link( $comment, $args ) ), 'flag_comment_'.$comment->comment_ID, '_flag_comment' );
+
+		return apply_filters( 'canvas_flag_comment_link',  $comment_flag_link, $comment, $args );
+
+	}
+
+}
+
+
+if( ! function_exists( 'canvas_get_comment_action_links' ) ) {
+
+
+	function canvas_get_comment_action_links( $comment, $args = array() ) {
+
+		$comment = ( is_object( $comment ) ) ? $comment : get_comment( $comment );
+
+
+    	return apply_filters( 'canvas_comment_action_links', array(
+
+					'approve'		=> array(
+
+						'link'				=> get_edit_comment_link( $comment ),
+						'title'				=> __( 'Approve', 'canvas' ),
+						'icon'				=> array( 'name' => 'check-circle', 'size' => 'sm' ),
+						'user_has_access'	=> ( current_user_can( 'moderate_comments' ) && canvas_comment_is_unapproved( $comment ) ),
+						'position'			=> 10
+
+					),
+					'flag'			=> array(
+
+						'link'				=> canvas_flag_comment_link( $comment ),
+						'title'				=> __( 'Flag', 'canvas' ),
+						'icon'				=> array( 'name' => 'flag', 'size' => 'sm' ),
+						'user_has_access'	=> ( is_user_logged_in() && ! canvas_comment_belongs_to_current_user($comment, get_current_user_id()) ),
+						'position'			=> 20
+
+					),
+					'edit'			=> array(
+
+						'link'				=> get_edit_comment_link( $comment ),
+						'title'				=> __( 'Edit', 'canvas' ),
+						'icon'				=> array( 'name' => 'edit', 'size' => 'sm' ),
+						'user_has_access'	=> canvas_user_can_edit_comment( $comment ),
+						'position'			=> 30
+
+					),
+					'delete'		=> array(
+
+						'link'				=> get_edit_comment_link( $comment ),
+						'title'				=> __( 'Delete', 'canvas' ),
+						'icon'				=> array( 'name' => 'trash', 'size' => 'sm' ),
+						'user_has_access'	=> canvas_user_can_edit_comment( $comment ),
+						'position'			=> 40
+
+					),
+					'permalink'		=> array(
+
+						'link'				=> canvas_comment_permalink( $comment ),
+						'title'				=> __( 'Permalink', 'canvas' ),
+						'icon'				=> array( 'name' => 'link', 'size' => 'sm' ),
+						'user_has_access'	=> true,
+						'position'			=> 50
+
+					),
+
+				) );
+
+	}
+
+
+}
+
+
+if( ! function_exists( 'canvas_get_comment_links' ) ) {
+
+
+	function canvas_get_comment_links( $comment, $args = array() ) {
+
+		$action_links = canvas_get_comment_action_links( $comment, $args );
+
+		$sorted_action_links = canvas_sort_comment_links( $action_links );
+
+		$comment_links = '';
+
+		foreach ( $sorted_action_links as $key => $action_link ) {
+
+			$user_has_access = (bool) $action_link['user_has_access'];
+
+			if( $user_has_access ) {
+
+				$action_link = apply_filters( 'canvas_'. $action_link['key'] .'_action_link', $action_link );
+
+				if( isset( $action_link['icon'] ) && ! empty( $action_link['icon'] )  ) {
+
+					$icon = apply_filters( 'canvas_'. $action_link['key'] .'_action_link_icon', canvas_get_svg_icon( array( 
+			            'icon'  => $action_link['icon']['name'],
+			            'size'  => $action_link['icon']['size']
+			         ) ) );
+
+				}
+
+				$comment_links .= sprintf(
+					            __('%s', 'canvas'),
+					            '<li class="'. esc_attr( $action_link['key'] ) .'-action-item"><a href="' . esc_url( $action_link['link'] ) . '" class="link link-secondary '. esc_attr( $action_link['key'] ) .'-action-link"><span class="icon icon-left">'. $icon .'</span>' . esc_html( $action_link['title'] ) . '</a></li>'
+					        );
+
+			}
+
+		}
+
+
+		return apply_filters( 'canvas_get_comment_links', $comment_links, $comment, $args );
+
+	}
+
+
+}
+
+
+if( ! function_exists( 'canvas_comment_links' ) ) {
+
+
+	function canvas_comment_links( $comment, $args = array() ) {
+
+		echo canvas_get_comment_links( $comment, $args );
+
+	}
+
 
 }
 
@@ -478,8 +1104,6 @@ if ( ! function_exists( 'canvas_comment' ) ) {
 	 * @since 1.0.0
 	 */
 	function canvas_comment( $comment, $args, $depth ) {
-
-		global $post;
 
 		$reply_icn = canvas_get_svg_icon( array( 
 
@@ -495,13 +1119,6 @@ if ( ! function_exists( 'canvas_comment' ) ) {
 
 		 ) );
 
-		$flag_icn = canvas_get_svg_icon( array( 
-
-			'icon'		=> 'flag',
-			'size'		=> 'sm'
-
-		 ) );
-
 		$chevron_right_icn = canvas_get_svg_icon( array( 
 
 			'icon'		=> 'chevron-right',
@@ -509,30 +1126,15 @@ if ( ! function_exists( 'canvas_comment' ) ) {
 
 		 ) );
 
-
-		$edit_icn = canvas_get_svg_icon( array( 
-
-			'icon'		=> 'edit',
-			'size'		=> 'sm'
-
-		 ) );
-
-		$link_icn = canvas_get_svg_icon( array( 
-
-			'icon'		=> 'link',
-			'size'		=> 'sm'
-
-		 ) );
-
 		$comment_link_args = ( isset( $_POST['cpage'] ) ) ? array( 'cpage' => $_POST['cpage'] ) : array();
 
-		$before_edit = '<span class="icon icon-left">' . $edit_icn . '</span>' . __( 'Edit', 'canvas' );
+		// $before_edit = '<span class="icon icon-left">' . $edit_icn . '</span>' . __( 'Edit', 'canvas' );
 
 		$before = '<span class="icon icon-left">' . $reply_icn . '</span>' . __( 'Reply', 'canvas' );
 
-		$permalink = '<span class="icon icon-left">' . $link_icn . '</span>' . __( 'Permalink', 'canvas' );
+		// $permalink = '<span class="icon icon-left">' . $link_icn . '</span>' . __( 'Permalink', 'canvas' );
 
-		$post_id = ( $post ) ? $post->ID : $args['post_id'];
+		$post_id = $comment->comment_post_ID;
 
 		if ( 'div' == $args['style'] ) {
 
@@ -578,7 +1180,9 @@ if ( ! function_exists( 'canvas_comment' ) ) {
 
 							<?php 
 
-								$comment_author = apply_filters( 'canvas_get_comment_author_link', get_comment_author_link( $comment ), $comment, $args, $depth  );
+								$display_name = ( function_exists('bp_is_active') && $comment->user_id ) ? bp_core_get_userlink( $comment->user_id ) : get_comment_author_link( $comment );
+
+								$comment_author = apply_filters( 'canvas_get_comment_author_link', $display_name, $comment, $args, $depth  );
 
 								printf( wp_kses_post( '<cite class="fn">%s</cite>', 'canvas' ), $comment_author );
 
@@ -619,23 +1223,7 @@ if ( ! function_exists( 'canvas_comment' ) ) {
 
 								    <ul class="right">
 
-								    <?php if ( current_user_can( 'manage_comments' ) ) : ?>
-
-								      <li><?php edit_comment_link( $before_edit, ' ', '' ); ?></li>
-
-								    <?php endif; ?>
-
-								      <!-- <li><a href="#flag" class="link"><span class="icon icon-left"><?php echo $flag_icn; ?></span><?php _e('Flag', 'canvas'); ?></a></li> -->
-
-								      <?php 
-
-								      	$csort = get_query_var( 'csort' );
-
-								      	$comment_permalink = ( $csort ) ? add_query_arg( 'csort', $csort, get_comment_link( $comment->comment_ID, $comment_link_args ) ) : get_comment_link( $comment->comment_ID, $comment_link_args );
-
-								      ?>
-
-								      <li><a href="<?php echo esc_url( htmlspecialchars( $comment_permalink ) ); ?>" class="comment-date link link-secondary"><?php echo $permalink;  ?></a></li>
+								    	<?php canvas_comment_links( $comment ); ?>								   
 								      
 								    </ul>
 
@@ -867,5 +1455,44 @@ function canvas_comment_sort_filter_title() {
 	}
 
 	return apply_filters( 'canvas_comment_sort_filter', $filter[ $csort ]['title'], $csort );
+
+}
+
+
+function canvas_flag_comment() {
+
+	if( isset( $_REQUEST['cid'] ) && isset( $_REQUEST['caction'] ) && isset( $_REQUEST['_flag_comment'] ) ) {
+
+		$comment_id = get_query_var( 'cid' );
+
+		$action = get_query_var( 'caction' );
+
+		if( ! empty( $comment_id ) && ! empty( $action ) ) {
+
+			$actions = canvas_get_comment_action_links( $comment_id );
+
+			if( ! wp_verify_nonce( $_REQUEST['_flag_comment'], 'flag_comment_' . $comment_id ) ) {
+
+				die( 'Not allowed to do that' );
+
+			}
+
+			if( array_key_exists( $action, $actions ) ) {
+
+				if( array_key_exists( 'user_has_access', $actions[ $action ] ) ) {
+
+					if( $actions[ $action ]['user_has_access'] ) {
+
+						print( 'Hello World' );
+
+					}
+
+				}
+
+			}
+
+		}
+
+	}
 
 }

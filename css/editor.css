@@ -1,0 +1,56 @@
+.wp-block-canvas-profile-block ul,
+.wp-block-canvas-profile-block li {
+	list-style: none;
+	margin: 0; padding: 0;
+}
+.wp-block-canvas-profile-block {
+	display: flex;
+	align-items: stretch;
+	background-color: #ffffff;
+	box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.12);
+}
+.wp-block-canvas-profile-block .canvas-profile-image {
+	display: flex;
+	align-items: center;
+}
+.wp-block-canvas-profile-block .canvas-profile-image.image-inactive {
+	background: #f4f4f4;
+	width: 40%;
+	border: 1px solid #dddddd;
+}
+.wp-block-canvas-profile-block .canvas-profile-image.image-active {
+	background-size: cover;
+	background-position: center;
+	max-width: 40%;
+}
+.wp-block-canvas-profile-block .canvas-profile-image button {
+	margin: 0 auto;
+}
+.wp-block-canvas-profile-block .canvas-profile-image button.image-button {
+	line-height: 0;
+	padding: 0px;
+}
+.wp-block-canvas-profile-block .canvas-profile-image button.image-button img {
+	opacity: 0;
+	margin: 0;
+}
+.wp-block-canvas-profile-block .canvas-profile-content {
+	width: 60%;
+	align-self: center;
+	padding: 18px;
+	box-sizing: border-box;
+}
+.wp-block-canvas-profile-block .canvas-profile-social {
+	margin-top: 12px;
+}
+.wp-block-canvas-profile-block .canvas-profile-social .social-link {
+	color: rgba(0, 0, 0, 0.24);
+	padding: 6px 12px;
+	border-left: 1px solid rgba(0, 0, 0, 0.12);
+}
+.wp-block-canvas-profile-block .canvas-profile-social .social-link:hover {
+	color: rgba(0, 0, 0, 1);
+}
+.wp-block-canvas-profile-block .canvas-profile-social .social-link:first-child {
+	border: none;
+}

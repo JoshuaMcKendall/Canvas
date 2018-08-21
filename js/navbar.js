@@ -15,6 +15,7 @@ jQuery(function($){
 
 					 $( '#user-menu.dropdown' ).removeClass( 'open' );
 					 $( '#user-menu.dropdown' ).attr( 'aria-hidden', 'true' );
+					 $( '#user-menu-trigger' ).attr( 'aria-expanded', 'false' );
 
 					 return true;
 
@@ -30,6 +31,7 @@ jQuery(function($){
 
 				$( '#user-menu.dropdown' ).addClass( 'open' ); 
 				$( '#user-menu.dropdown' ).attr( 'aria-hidden', 'false' );
+				$( '#user-menu-trigger' ).attr( 'aria-expanded', 'true' );
 
 				return true;
 
@@ -110,7 +112,7 @@ jQuery(function($){
 
 					closeUserMenu();
 
-					$( 'a.dropdown-trigger' ).attr( 'aria-expanded', 'false' );
+					
 
 				} );
 

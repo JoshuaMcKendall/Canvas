@@ -40,6 +40,12 @@
 
 		<?php wp_head(); ?>
 
+		<noscript class="lazyload">
+			
+			<?php do_action( 'canvas_lazy_load' ); ?>
+
+		</noscript>
+
 	</head>
 
 	<body <?php body_class(); ?>>

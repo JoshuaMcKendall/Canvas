@@ -6,7 +6,7 @@
 
 <li id="user-menu-dropdown-container" class="menu-item">
 
-	<a href="#user-menu" id="user-menu-trigger" class="link link-secondary dropdown-trigger" onclick="event.preventDefault();" aria-expanded="false">
+	<a href="#user-menu" id="user-menu-trigger" class="link link-secondary dropdown-trigger" onclick="event.preventDefault();" aria-expanded="false" aria-controls="user-menu">
 
 		<?php do_action( 'canvas_menu_item_user_avatar' ); ?>
 

@@ -5,6 +5,7 @@ class Canvas_Category_Walker extends Walker_Category {
 
     private $category_count = 0;
     private $display_count;
+    private $current_category;
 
 
     function __construct($display_count) {
@@ -37,7 +38,7 @@ class Canvas_Category_Walker extends Walker_Category {
 
          ) );
 
-        $unique_id = uniqid( 'group-' . $depth . '-' );
+        $unique_id = 'group-' . $depth . '-' . $this->current_category->term_id;
 
         $input = '<input type="checkbox" name="'.esc_attr( $unique_id ).'" id="'.esc_attr( $unique_id ).'"><label for="'.esc_attr( $unique_id ).'" class="icon">'.$x_icn.'</label>';
         $output .= "$input $indent<ul class='children'>\n";
@@ -77,6 +78,8 @@ class Canvas_Category_Walker extends Walker_Category {
      * @param int    $id       Optional. ID of the current category. Default 0.
      */
     public function start_el( &$output, $category, $depth = 0, $args = array(), $id = 0 ) {
+
+        $this->current_category = $category;
         /** This filter is documented in wp-includes/category-template.php */
         $cat_name = apply_filters(
             'list_cats',

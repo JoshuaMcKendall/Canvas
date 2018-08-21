@@ -124,7 +124,7 @@ function canvas_breadcrumbs( $area, $direction = 'right' ) {
 
                 }
 
-            }
+            } 
 
             $title = ( ! empty( get_the_title() ) ) ? $separator . '<span class="breadcrumb">' . get_the_title() . '</span>' : '';
 
@@ -218,7 +218,7 @@ function canvas_paginator(){
      ) );
  
     if( $wp_query->max_num_pages > 1 )
-        $pagination = '<div id="canvas-loadmore" class="btn-group"><button id="loadmore-settings" class="btn btn-pill btn-circle btn-default"><span class="icon icon-sm">'. $cog_icn .'</span></button><a href="#load-more" class="canvas-loadmore btn btn-pill btn-primary">' . esc_html( $trigger_text ) . '</a></div>';
+        $pagination = '<div id="canvas-loadmore" class="btn-group hidden"><button id="loadmore-settings" class="btn btn-pill btn-circle btn-default"><span class="icon icon-sm">'. $cog_icn .'</span></button><a href="#load-more" class="canvas-loadmore btn btn-pill btn-primary">' . esc_html( $trigger_text ) . '</a></div>';
  
     // replace first page before printing it
     echo $pagination;
@@ -262,5 +262,35 @@ function canvas_blog_link() {
     $list_link = '<span class="nav-link nav-blog-link" ><a href="'. esc_attr( $blog_archive_link ) .'" class="link"><span class="icon">' . $list_icn . '</span></a></span>';
 
     echo apply_filters( 'canvas_blog_link',  $list_link, $list_icn, $blog_archive_link );
+
+}
+
+function canvas_time_link( $post_id = null ) {
+
+    $time_string = '<time class="entry-date published updated" datetime="%1$s">%2$s</time>';
+    // if ( get_the_time( 'U' ) !== get_the_modified_time( 'U' ) ) {
+    //     $time_string = '<time class="entry-date published" datetime="%1$s">%2$s</time><time class="updated" datetime="%3$s">%4$s</time>';
+    // }
+
+    $time_string = sprintf( $time_string,
+        get_the_date( DATE_W3C ),
+        get_the_date( __('M j, Y') ),
+        get_the_modified_date( DATE_W3C ),
+        get_the_modified_date()
+    );
+
+    $icon = canvas_get_svg_icon( array( 
+        'icon'  => 'calendar',
+        'size'  => 'sm'
+     ) );
+
+    $post_date = ( is_single() ) ? '<span class="time-container" ><small class="time-meta meta-text" ><span class="icon icon-left">'.$icon.'</span>' . $time_string . '</small></span>' : '<span class="time-container" ><small class="time-meta meta-text" ><a href="' . esc_url( get_permalink() ) . '" rel="bookmark" class="link link-secondary"><span class="icon icon-left">'.$icon.'</span>' . $time_string . '</a></small></span>';
+
+    // Wrap the time string in a link, and preface it with 'Posted on'.
+    echo apply_filters( 'canvas_time_link', sprintf(
+                            /* translators: %s: post date */
+                            __( '%s', 'canvas' ),
+                            $post_date
+                        ), $post_date, $icon, $time_string );
 
 }

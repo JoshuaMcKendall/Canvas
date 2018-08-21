@@ -38,15 +38,8 @@
 
 	<div class="entry-content post">
 		<?php
-		
-			$more_link = canvas_get_svg_icon( array( 
 
-				'icon'		=> 'chevron-down',
-				'size'		=> 'sm'
-
-			 ) );
-
-			the_content( $more_link );
+			the_content( canvas_more_link() );
 
 			wp_link_pages( array(
 				'before' => '<div class="page-links">' . __( 'Pages:', 'canvas' ),

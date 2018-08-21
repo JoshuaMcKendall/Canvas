@@ -24,6 +24,7 @@ if ( ! class_exists( 'Canvas' ) ) :
 		 * @since 1.0
 		 */
 		public function __construct() {
+			add_action( 'init', 										array( $this, 'setup_profile_block' ) );
 			add_action( 'after_setup_theme',          					array( $this, 'setup' ) );
 			add_action( 'widgets_init',               					array( $this, 'widgets_init' ) );
 			add_action( 'wp_enqueue_scripts',         					array( $this, 'scripts' ),       10 );
@@ -41,10 +42,10 @@ if ( ! class_exists( 'Canvas' ) ) :
 			add_action( 'canvas_menu_item_shopping_cart',				array( $this, 'canvas_render_cart_menu_item' ) );
 			add_action( 'wp_ajax_loadmore',								array( $this, 'canvas_loadmore_ajax_handler' ) );
 			add_action( 'wp_ajax_nopriv_loadmore',						array( $this, 'canvas_loadmore_ajax_handler' ) );
-			add_action('wp_ajax_cloadmore', 							array( $this, 'canvas_comments_loadmore_handler') );
-			add_action('wp_ajax_nopriv_cloadmore', 						array( $this, 'canvas_comments_loadmore_handler') );
-			add_action('wp_ajax_ajax_comments', 						array( $this, 'canvas_submit_ajax_comment') );
-			add_action('wp_ajax_nopriv_ajax_comments', 					array( $this, 'canvas_submit_ajax_comment') );
+			// add_action('wp_ajax_cloadmore', 							array( $this, 'canvas_comments_loadmore_handler') );
+			// add_action('wp_ajax_nopriv_cloadmore', 						array( $this, 'canvas_comments_loadmore_handler') );
+			// add_action('wp_ajax_ajax_comments', 						array( $this, 'canvas_submit_ajax_comment') );
+			// add_action('wp_ajax_nopriv_ajax_comments', 					array( $this, 'canvas_submit_ajax_comment') );
 
 			//add_action( 'canvas_cart_dropdown_menu_body', 			array( $this, 'canvas_render_cart_links' ) );
 
@@ -56,9 +57,27 @@ if ( ! class_exists( 'Canvas' ) ) :
 			add_filter( 'feed_link',									array( $this, 'filter_feed_link' ), 10, 1 );
 			add_filter( 'get_comment_author_link',						array( $this, 'link_to_profile' ), 10, 1 );
 			add_filter( 'get_comment_author_url',						array( $this, 'link_to_profile_url' ), 10, 3 );	
-			add_filter( 'query_vars',									array( $this, 'comment_sort_query_var' ), 10, 1 );				 
+			add_filter( 'query_vars',									array( $this, 'comment_sort_query_var' ), 10, 1 );		 
 		}
 
+		public function setup_profile_block() {
+
+
+			wp_register_script(
+				'canvas-profile-block-script', // Handle.
+				get_template_directory_uri() . '/js/profile/block.js', // Block.js: We register the block here.
+				array( 'wp-blocks', 'wp-element', 'wp-i18n' ) // Dependencies, defined above.
+			);
+
+				// Register the block with WP using our namespacing
+				// We also specify the scripts and styles to be used in the Gutenberg interface
+				register_block_type( 'canvas/profile-block', array(
+					'editor_script' => 'canvas-profile-block-script',
+					'editor_style' => 'canvas-profile-block-editor-style',
+					'style' => 'canvas-profile-block-editor-style',
+				) );
+
+		}
 
 		/**
 		 * Sets up theme defaults and registers support for various WordPress features.
@@ -332,6 +351,21 @@ if ( ! class_exists( 'Canvas' ) ) :
 		}
 
 		/**
+	     * Determine whether to render post meta time item.
+	     *
+	     * @param 	$post_id 	int 	The id of the associated post.
+	     *
+	     * @return $enabled 	bool 	Whether or not time item is enabled.
+	     */
+		public function canvas_time_link_enabled( $post_id ) {
+
+			$enabled = true; // Time permalink should always be enabled
+
+			return apply_filters( 'canvas_time_link_enabled', $enabled, $post_id );
+
+		}
+
+		/**
 	     * Gets a nicely formatted string for the published date.
 	     */
 	    public function canvas_time_link( $post_id ) {
@@ -355,13 +389,45 @@ if ( ! class_exists( 'Canvas' ) ) :
 	        $post_date = ( is_single() ) ? '<small class="meta-text" ><span class="icon icon-left">'.$icon.'</span><strong>' . $time_string . '</strong></small>' : '<small><strong><a href="' . esc_url( get_permalink() ) . '" rel="bookmark" class="link link-secondary"><span class="icon icon-left">'.$icon.'</span>' . $time_string . '</a></strong></small>';
 
 	        // Wrap the time string in a link, and preface it with 'Posted on'.
-	        return sprintf(
-	            /* translators: %s: post date */
-	            __( '%s', 'canvas' ),
-	            $post_date
-	        );
+	        return apply_filters( 'canvas_time_link', sprintf(
+						            /* translators: %s: post date */
+						            __( '%s', 'canvas' ),
+						            $post_date
+						        ), $post_date, $icon, $time_string );
 	    }
 
+		/**
+	     * Determine whether to render post meta comments item.
+	     *
+	     * @param 	$post_id 	int 	The id of the associated post.
+	     *
+	     * @return 	$enabled 	bool 	Whether or not comments item is enabled.
+	     */
+		public function canvas_comments_link_enabled( $post_id ) {
+
+			if( comments_open( $post_id ) ) {
+
+				$enabled = true;
+
+			} elseif( get_comments_number( $post_id ) > 1 ) {
+
+				$enabled = true;
+
+			} else {
+
+				$enabled = false;
+
+			}
+
+			if( is_single() ) {
+
+				$enabled = false; 
+
+			}
+
+			return apply_filters( 'canvas_comments_link_enabled', $enabled, $post_id );
+
+		}
 
 	    public function canvas_comments_link( $post_id ) {
 
@@ -374,9 +440,30 @@ if ( ! class_exists( 'Canvas' ) ) :
 
 	        return sprintf(
 	            __('%s', 'canvas'),
-	            '<small><strong><a href="' . esc_url( get_comments_link() ) . '" rel="bookmark" class="link link-secondary"><span class="icon icon-left">'.$icon.'</span>' . $comment_count . '</a></strong></small>'
+	            '<small><strong><a href="' . esc_url( get_comments_link() ) . '" rel="bookmark" class="link link-secondary"><span class="icon icon-left">'. $icon .'</span>' . esc_html( $comment_count ) . '</a></strong></small>'
 	        );
 	    }
+
+		/**
+	     * Determine whether to render post meta permalink item.
+	     *
+	     * @param 	$post_id 	int 	The id of the associated post.
+	     *
+	     * @return 	$enabled 	bool 	Whether or not permalink item is enabled.
+	     */
+		public function canvas_perma_link_enabled( $post_id ) {
+
+			$enabled = true;
+
+			if( is_single() ) {
+
+				$enabled = false; 
+
+			}
+
+			return apply_filters( 'canvas_perma_link_enabled', $enabled, $post_id );
+
+		}
 
 	    public function canvas_perma_link( $post_id ) {
 
@@ -435,21 +522,21 @@ if ( ! class_exists( 'Canvas' ) ) :
 						'time'			=> array(
 
 							'link'		=> $this->canvas_time_link( $post_id ),
-							'single'	=> true,
+							'enabled'	=> $this->canvas_time_link_enabled( $post_id ),
 							'position'	=> 10
 
 						),
 						'comments'		=> array(
 
 							'link'		=> $this->canvas_comments_link( $post_id ),
-							'single'	=> false,
+							'enabled'	=> $this->canvas_comments_link_enabled( $post_id ),
 							'position'	=> 20
 
 						),
 						'permalink'		=> array(
 
 							'link'		=> $this->canvas_perma_link( $post_id ),
-							'single'	=> false,
+							'enabled'	=> $this->canvas_perma_link_enabled( $post_id ),
 							'position'	=> 30
 
 						),
@@ -469,29 +556,13 @@ if ( ! class_exists( 'Canvas' ) ) :
 
 			foreach ( $list_items as $list_item ) {
 				
+				if( ! $list_item['enabled'] ) {
 
-				if( is_single() ) {
-
-					if( ! $list_item['single'] ) {
-
-						continue;
-
-					}
-
-					$list .= '<li class="'.$list_item['key'].' list-item">'.$list_item['link'].'</li>';
-
-				} else {
-
-					if( $list_item['key'] == 'comments' && ! comments_open() ) {
-
-						continue;
-
-					}
-
-					$list .= '<li class="'.$list_item['key'].' list-item">'.$list_item['link'].'</li>';
+					continue;
 
 				}
 
+				$list .= '<li class="'.$list_item['key'].' list-item">'.$list_item['link'].'</li>';
 
 			}
 
@@ -562,6 +633,8 @@ if ( ! class_exists( 'Canvas' ) ) :
 
 			global $wp_query; 
 
+			wp_enqueue_script( 'comment-reply' );
+
 		    wp_enqueue_script( 'navbar_js', get_template_directory_uri() . '/js/navbar.js', 'jquery', false, true );
 
 		    wp_enqueue_style('open_sans', 'https://fonts.googleapis.com/css?family=Open+Sans:400,300,600');
@@ -581,35 +654,22 @@ if ( ! class_exists( 'Canvas' ) ) :
 		 
 		 	wp_enqueue_script( 'canvas_loadmore' );
 
-		 	if( is_single() || ( is_page() && comments_open() ) ) {
+		 	wp_register_style(
 
-				wp_register_script( 'canvas_comments_loadmore', get_stylesheet_directory_uri() . '/js/canvas_comments_loadmore.js', array('jquery') );
+		 		'canvas-profile-block-editor-style',
+		 		get_stylesheet_directory() . '/css/editor.css',
+		 		array( 'wp-edit-blocks' )
 
-				wp_localize_script( 'canvas_comments_loadmore', 'canvas_comments_loadmore_params', array(
-					'ajaxurl' 		=> site_url() . '/wp-admin/admin-ajax.php',
-					'post_id' 		=> get_the_ID(),
-					'order'			=> get_option( 'comment_order' ),
-					'default_page'	=> get_option( 'default_comments_page' ),
-					'sort_by'		=> get_query_var( 'csort' )
-				) );
+		 	);
 
-				wp_enqueue_script( 'canvas_comments_loadmore' );
+		 	wp_register_style(
 
-		 	}
+		 		'canvas-profile-block-frontend-style',
+		 		get_stylesheet_directory() . '/css/profile.css',
+		 		array( 'wp-edit-blocks' )
 
+		 	);
 
-			wp_register_script( 'ajax_comment', get_stylesheet_directory_uri() . '/js/canvas_ajax_comments.js', array('jquery') );
-		 
-			// let's pass ajaxurl here, you can do it directly in JavaScript but sometimes it can cause problems, so better is PHP
-			wp_localize_script( 'ajax_comment', 'canvas_ajax_comment_params', array(
-				'ajaxurl' 		=> site_url() . '/wp-admin/admin-ajax.php',
-				'post_id' 		=> get_the_ID(),
-				'req'	  		=> get_option( 'require_name_email' ),
-				'btn_text'		=> esc_html__( 'Post Comment', 'canvas' ),
-				'loading_text'	=> esc_html__( 'Posting...', 'canvas' )
-			) );
-		 
-		 	wp_enqueue_script( 'ajax_comment' );
 
 		}
 
@@ -969,7 +1029,9 @@ if ( ! class_exists( 'Canvas' ) ) :
 
 		public function comment_sort_query_var( $vars ) {
 
-			$vars[] = 'csort';
+			$query_vars = array( 'csort', 'cid', 'caction' );
+
+			$vars = array_merge( $vars, $query_vars );
 
 			return $vars;
 

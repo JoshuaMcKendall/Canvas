@@ -23,17 +23,18 @@
 	<div class="blog-feed feed">
 
 		<a href="<?php bloginfo('rss2_url'); ?>" aria-label="<?php esc_attr_e( 'RSS Feed', 'canvas' ); ?>" class="btn">
-			
-			<?php 
+				
 
-				echo canvas_get_svg_icon( array(
+				<?php 
 
-				 'icon' => 'rss',
-				 'size' => 'xs' 
+					echo canvas_get_svg_icon( array(
 
-				) ); 
+					 'icon' => 'rss',
+					 'size' => 'xs' 
 
-			?>
+					) ); 
+
+				?>
 
 		</a>
 
